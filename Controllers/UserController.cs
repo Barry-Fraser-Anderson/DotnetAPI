@@ -21,15 +21,25 @@ public class UserController : ControllerBase
 
   [HttpGet("GetUsers")]
   //public IEnumerable<User> GetUsers()
-  public string[] GetUsers()
+  public IEnumerable<User> GetUsers()
   {
-    return new string[] { "user1", "user2", "user3" };
-    // return Enumerable.Range(1, 5).Select(index => new User
-    // {
-    //   Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-    //   TemperatureC = Random.Shared.Next(-20, 55),
-    //   Summary = Summaries[Random.Shared.Next(Summaries.Length)]
-    // })
-    // .ToArray();
+    string sql = @"
+      SELECT UserId, FirstName, LastName, Email, Gender, Active
+      FROM TutorialAppSchema.Users";
+
+    IEnumerable<User> users = _dapper.LoadData<User>(sql);
+    return users;
+  }
+
+  [HttpGet("GetSingleUser/{userId}")]
+  public User GetSingleUser(int userId)
+  {
+    string sql = @"
+      SELECT UserId, FirstName, LastName, Email, Gender, Active
+      FROM TutorialAppSchema.Users
+      WHERE Userid = " + userId.ToString();
+
+    User user = _dapper.LoadDataSingle<User>(sql);
+    return user;
   }
 }
