@@ -1,4 +1,5 @@
 using AutoMapper;
+using DotnetAPI.Data;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetAPI.Controllers;
@@ -7,12 +8,12 @@ namespace DotnetAPI.Controllers;
 [Route("[controller]")]
 public class UserEFController : ControllerBase
 {
-  DataContextEF _entityFramework;
+  IUserRepository _userRepository;
   IMapper _mapper;
 
-  public UserEFController(IConfiguration config)
+  public UserEFController(IConfiguration config, IUserRepository userRepository)
   {
-    _entityFramework = new DataContextEF(config);
+    _userRepository = userRepository;
 
     _mapper = new Mapper(new MapperConfiguration(cfg =>
     {
@@ -20,30 +21,22 @@ public class UserEFController : ControllerBase
     }));
   }
 
-
   [HttpGet("GetUsers")]
-  //public IEnumerable<User> GetUsers()
   public IEnumerable<User> GetUsers()
   {
-    var users = _entityFramework.Users.ToList<User>();
-    return users;
+    return _userRepository.GetUsers();
   }
 
   [HttpGet("GetSingleUser/{userId}")]
   public User GetSingleUser(int userId)
   {
-    User? user = _entityFramework.Users
-      .Where(u => u.UserId == userId).FirstOrDefault<User>();
-    if (user != null) return user;
-
-    throw new Exception("Failed to get User");
+    return _userRepository.GetSingleUser(userId);
   }
 
   [HttpPut("EditUser")]
   public IActionResult EditUser(User user)
   {
-    User? userDb = _entityFramework.Users
-      .Where(u => u.UserId == user.UserId).FirstOrDefault<User>();
+    User? userDb = _userRepository.GetSingleUser(user.UserId);
     if (userDb != null)
     {
       userDb.FirstName = user.FirstName;
@@ -52,7 +45,7 @@ public class UserEFController : ControllerBase
       userDb.Gender = user.Gender;
       userDb.Active = user.Active;
 
-      if (_entityFramework.SaveChanges() > 0)
+      if (_userRepository.SaveChanges())
       {
         return Ok();
       }
@@ -66,8 +59,8 @@ public class UserEFController : ControllerBase
   {
     User userDb = _mapper.Map<User>(user);
 
-    _entityFramework.Users.Add(userDb);
-    if (_entityFramework.SaveChanges() > 0)
+    _userRepository.AddEntity<User>(userDb);
+    if (_userRepository.SaveChanges())
     {
       return Ok();
     }
@@ -78,12 +71,11 @@ public class UserEFController : ControllerBase
   [HttpDelete("DeleteUser/{userId}")]
   public IActionResult DeleteUser(int userId)
   {
-    User? userDb = _entityFramework.Users
-      .Where(u => u.UserId == userId).FirstOrDefault<User>();
+    User? userDb = _userRepository.GetSingleUser(userId);
     if (userDb != null)
     {
-      _entityFramework.Users.Remove(userDb);
-      if (_entityFramework.SaveChanges() > 0)
+      _userRepository.RemoveEntity<User>(userDb);
+      if (_userRepository.SaveChanges())
       {
         return Ok();
       }
@@ -96,26 +88,20 @@ public class UserEFController : ControllerBase
   [HttpGet("UserJobInfo/{userId}")]
   public UserJobInfo GetUserJobInfo(int userId)
   {
-    UserJobInfo? UserJobInfo = _entityFramework.UserJobInfo
-      .Where(u => u.UserId == userId).FirstOrDefault<UserJobInfo>();
-
-    if (UserJobInfo != null) return UserJobInfo;
-
-    throw new Exception("Failed to get UserJobInfo");
+    return _userRepository.GetUserJobInfo(userId);
   }
 
   [HttpPut("UserJobInfo")]
-  public IActionResult PutUserJobInfo(UserJobInfo UserJobInfo)
+  public IActionResult PutUserJobInfo(UserJobInfo userJobInfo)
   {
-    UserJobInfo? UserJobInfoDb = _entityFramework.UserJobInfo
-      .Where(u => u.UserId == UserJobInfo.UserId).FirstOrDefault<UserJobInfo>();
-    if (UserJobInfoDb != null)
+    UserJobInfo? userJobInfoDb = _userRepository.GetUserJobInfo(userJobInfo.UserId);
+    if (userJobInfoDb != null)
     {
-      UserJobInfoDb.UserId = UserJobInfo.UserId;
-      UserJobInfoDb.JobTitle = UserJobInfo.JobTitle;
-      UserJobInfoDb.Department = UserJobInfo.Department;
+      userJobInfoDb.UserId = userJobInfo.UserId;
+      userJobInfoDb.JobTitle = userJobInfo.JobTitle;
+      userJobInfoDb.Department = userJobInfo.Department;
 
-      if (_entityFramework.SaveChanges() > 0)
+      if (_userRepository.SaveChanges())
       {
         return Ok();
       }
@@ -125,10 +111,10 @@ public class UserEFController : ControllerBase
   }
 
   [HttpPost("UserJobInfo")]
-  public IActionResult PostUserJobInfo(UserJobInfo UserJobInfo)
+  public IActionResult PostUserJobInfo(UserJobInfo userJobInfo)
   {
-    _entityFramework.UserJobInfo.Add(UserJobInfo);
-    if (_entityFramework.SaveChanges() > 0)
+    _userRepository.AddEntity<UserJobInfo>(userJobInfo);
+    if (_userRepository.SaveChanges())
     {
       return Ok();
     }
@@ -139,12 +125,11 @@ public class UserEFController : ControllerBase
   [HttpDelete("UserJobInfo/{userId}")]
   public IActionResult DeleteUserJobInfo(int userId)
   {
-    UserJobInfo? UserJobInfoDb = _entityFramework.UserJobInfo
-      .Where(u => u.UserId == userId).FirstOrDefault<UserJobInfo>();
+    UserJobInfo? UserJobInfoDb = _userRepository.GetUserJobInfo(userId);
     if (UserJobInfoDb != null)
     {
-      _entityFramework.UserJobInfo.Remove(UserJobInfoDb);
-      if (_entityFramework.SaveChanges() > 0)
+      _userRepository.RemoveEntity<UserJobInfo>(UserJobInfoDb);
+      if (_userRepository.SaveChanges())
       {
         return Ok();
       }
@@ -157,25 +142,19 @@ public class UserEFController : ControllerBase
   [HttpGet("UserSalary/{userId}")]
   public UserSalary GetUserSalary(int userId)
   {
-    UserSalary? userSalary = _entityFramework.UserSalary
-      .Where(u => u.UserId == userId).FirstOrDefault<UserSalary>();
-
-    if (userSalary != null) return userSalary;
-
-    throw new Exception("Failed to get UserSalary");
+    return _userRepository.GetUserSalary(userId);
   }
 
   [HttpPut("UserSalary")]
   public IActionResult PutUserSalary(UserSalary userSalary)
   {
-    UserSalary? userSalaryDb = _entityFramework.UserSalary
-      .Where(u => u.UserId == userSalary.UserId).FirstOrDefault<UserSalary>();
+    UserSalary? userSalaryDb = _userRepository.GetUserSalary(userSalary.UserId);
     if (userSalaryDb != null)
     {
       userSalaryDb.UserId = userSalary.UserId;
       userSalaryDb.Salary = userSalary.Salary;
 
-      if (_entityFramework.SaveChanges() > 0)
+      if (_userRepository.SaveChanges())
       {
         return Ok();
       }
@@ -187,8 +166,8 @@ public class UserEFController : ControllerBase
   [HttpPost("UserSalary")]
   public IActionResult PostUserSalary(UserSalary userSalary)
   {
-    _entityFramework.UserSalary.Add(userSalary);
-    if (_entityFramework.SaveChanges() > 0)
+    _userRepository.AddEntity<UserSalary>(userSalary);
+    if (_userRepository.SaveChanges())
     {
       return Ok();
     }
@@ -199,12 +178,11 @@ public class UserEFController : ControllerBase
   [HttpDelete("UserSalary/{userId}")]
   public IActionResult DeleteUserSalary(int userId)
   {
-    UserSalary? userSalaryDb = _entityFramework.UserSalary
-      .Where(u => u.UserId == userId).FirstOrDefault<UserSalary>();
+    UserSalary? userSalaryDb = _userRepository.GetUserSalary(userId);
     if (userSalaryDb != null)
     {
-      _entityFramework.UserSalary.Remove(userSalaryDb);
-      if (_entityFramework.SaveChanges() > 0)
+      _userRepository.RemoveEntity<UserSalary>(userSalaryDb);
+      if (_userRepository.SaveChanges())
       {
         return Ok();
       }
