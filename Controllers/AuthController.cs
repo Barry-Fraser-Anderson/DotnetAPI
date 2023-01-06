@@ -22,10 +22,10 @@ namespace DotnetAPI.Controllers
     {
       if (userReg.Password == userReg.PasswordConfirm)
       {
-        string sql =
-          "SELECT * FROM TutorialAppSchema.Auth WHERE Email = '" +
+        string sqlGetAuth =
+          "SELECT Email FROM TutorialAppSchema.Auth WHERE Email = '" +
             userReg.Email + "'";
-        IEnumerable<string> users = _dapper.LoadData<string>(sql);
+        IEnumerable<string> users = _dapper.LoadData<string>(sqlGetAuth);
         if (users.Count() == 0)
         {
           byte[] passwordSalt = new byte[128 / 8];
@@ -49,7 +49,17 @@ namespace DotnetAPI.Controllers
           sqlParameters.Add(passwordHashParam);
           sqlParameters.Add(passwordSaltParam);
 
-          if (_dapper.ExecuteSqlWithParameters(sqlAddAuth, sqlParameters)) return Ok();
+          if (_dapper.ExecuteSqlWithParameters(sqlAddAuth, sqlParameters))
+          {
+            string sqlAddUser =
+              "INSERT INTO TutorialAppSchema.Users (FirstName,LastName,Email,Gender,Active)" +
+              $" VALUES ('{userReg.FirstName}','{userReg.LastName}','{userReg.Email}','{userReg.Gender}','1')";
+            if (_dapper.ExecuteSql(sqlAddUser))
+            {
+              return Ok();
+            }
+            throw new Exception("Failed to add user");
+          }
           throw new Exception("Failed to register user");
         }
         throw new Exception("A user with this email already exists!");
