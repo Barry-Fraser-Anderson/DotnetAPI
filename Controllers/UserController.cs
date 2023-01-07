@@ -31,7 +31,7 @@ public class UserController : ControllerBase
     string sql =
       "SELECT UserId, FirstName, LastName, Email, Gender, Active" +
       " FROM TutorialAppSchema.Users" +
-      " WHERE Userid = " + userId.ToString();
+      " WHERE UserId = " + userId.ToString();
 
     User user = _dapper.LoadDataSingle<User>(sql);
     if (user != null) return user;
@@ -64,17 +64,17 @@ public class UserController : ControllerBase
   {
     string sql =
       "INSERT INTO TutorialAppSchema.Users(" +
-      "FirstName," +
-      "LastName," +
-      "Email," +
-      "Gender," +
-      "Active" +
+      " FirstName," +
+      " LastName," +
+      " Email," +
+      " Gender," +
+      " Active" +
       ") VALUES (" +
-     $"'{user.FirstName}'," +
-     $"'{user.LastName}'," +
-     $"'{user.Email}'," +
-     $"'{user.Gender}'," +
-     $"'{(user.Active ? 1 : 0)}'" +
+     $" '{user.FirstName}'," +
+     $" '{user.LastName}'," +
+     $" '{user.Email}'," +
+     $" '{user.Gender}'," +
+     $" '{(user.Active ? 1 : 0)}'" +
       ")";
 
     if (_dapper.ExecuteSql(sql))
@@ -90,7 +90,7 @@ public class UserController : ControllerBase
   {
     string sql =
       "DELETE FROM TutorialAppSchema.Users" +
-      " WHERE Userid = " + userId.ToString();
+      " WHERE UserId = " + userId.ToString();
 
     _dapper.ExecuteSql(sql);
     return Ok();
@@ -101,7 +101,7 @@ public class UserController : ControllerBase
   public UserJobInfo GetUserJobInfo(int userId)
   {
     string sql =
-      "SELECT UserId,JobTitle, Department" +
+      "SELECT UserId, JobTitle, Department" +
       " FROM TutorialAppSchema.UserJobInfo" +
       " WHERE UserId = " + userId.ToString();
 
@@ -116,8 +116,8 @@ public class UserController : ControllerBase
   {
     string sql =
       "UPDATE TutorialAppSchema.UserJobuserJobInfo" +
-      " SET JobTitle = '" + userJobInfo.JobTitle + "','Department = '" + userJobInfo.Department + "' " +
-      "WHERE UserId = " + userJobInfo.UserId.ToString();
+      " SET JobTitle = '" + userJobInfo.JobTitle + "', Department = '" + userJobInfo.Department + "'" +
+      " WHERE UserId = " + userJobInfo.UserId.ToString();
 
     if (_dapper.ExecuteSql(sql))
     {
@@ -131,8 +131,8 @@ public class UserController : ControllerBase
   public IActionResult PostUserJobInfo(UserJobInfo userJobInfo)
   {
     string sql =
-      "INSERT INTO TutorialAppSchema.UserJobInfo(JobTitle,Department)" +
-      " VALUES('" + userJobInfo.JobTitle + "','" + userJobInfo.Department + "')";
+      "INSERT INTO TutorialAppSchema.UserJobInfo (JobTitle, Department)" +
+      " VALUES ('" + userJobInfo.JobTitle + "', '" + userJobInfo.Department + "')";
 
     if (_dapper.ExecuteSql(sql))
     {
@@ -147,7 +147,7 @@ public class UserController : ControllerBase
   {
     string sql =
       "DELETE FROM TutorialAppSchema.UserJobInfo" +
-      " WHERE Userid = " + userId.ToString();
+      " WHERE UserId = " + userId.ToString();
 
     _dapper.ExecuteSql(sql);
     return Ok();
@@ -190,8 +190,8 @@ public class UserController : ControllerBase
   public IActionResult PostUserSalary(UserSalary userSalary)
   {
     string sql =
-      "INSERT INTO TutorialAppSchema.UserSalary(UserId, Salary)" +
-      " VALUES(" + userSalary.UserId.ToString() + "," + userSalary.Salary.ToString() + ")";
+      "INSERT INTO TutorialAppSchema.UserSalary (UserId, Salary)" +
+      " VALUES(" + userSalary.UserId.ToString() + ", " + userSalary.Salary.ToString() + ")";
 
     if (_dapper.ExecuteSql(sql))
     {
@@ -206,7 +206,7 @@ public class UserController : ControllerBase
   {
     string sql =
       "DELETE FROM TutorialAppSchema.UserSalary" +
-      " WHERE Userid = " + userId.ToString();
+      " WHERE UserId = " + userId.ToString();
 
     _dapper.ExecuteSql(sql);
     return Ok();
