@@ -42,7 +42,7 @@ namespace DotnetAPI.Controllers
 
           string sqlAddAuth =
             "INSERT INTO TutorialAppSchema.Auth (Email, PasswordHash, PasswordSalt)" +
-            " VALUES ('" + userReg.Email + "',@PasswordHash, @PasswordSalt)";
+            " VALUES ('" + userReg.Email + "', @PasswordHash, @PasswordSalt)";
 
           List<SqlParameter> sqlParameters = new List<SqlParameter>();
 
@@ -57,8 +57,8 @@ namespace DotnetAPI.Controllers
           if (_dapper.ExecuteSqlWithParameters(sqlAddAuth, sqlParameters))
           {
             string sqlAddUser =
-              "INSERT INTO TutorialAppSchema.Users (FirstName,LastName,Email,Gender,Active)" +
-              $" VALUES ('{userReg.FirstName}','{userReg.LastName}','{userReg.Email}','{userReg.Gender}','1')";
+              "INSERT INTO TutorialAppSchema.Users (FirstName, LastName, Email, Gender, Active)" +
+              $" VALUES ('{userReg.FirstName}', '{userReg.LastName}', '{userReg.Email}', '{userReg.Gender}', '1')";
             if (_dapper.ExecuteSql(sqlAddUser))
             {
               return Ok();
@@ -78,7 +78,7 @@ namespace DotnetAPI.Controllers
     public IActionResult Login(UserLoginDto userLogin)
     {
       string sqlLoginConfirm =
-        "SELECT PasswordHash,PasswordSalt FROM TutorialAppSchema.Auth" +
+        "SELECT PasswordHash, PasswordSalt FROM TutorialAppSchema.Auth" +
         " WHERE Email = '" + userLogin.Email + "'";
       var userConfirm = _dapper.LoadDataSingle<UserLoginConfirmDto>(sqlLoginConfirm);
       var passwordHash = _authHelper.GetPasswordHash(userLogin.Password, userConfirm.PasswordSalt);
