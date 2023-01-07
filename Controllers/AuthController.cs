@@ -1,11 +1,19 @@
 using System.Data;
+using System.Text;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Security.Cryptography;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
+using Microsoft.IdentityModel.Tokens;
 
 namespace DotnetAPI.Controllers
 {
+  [Authorize]
+  [ApiController]
+  [Route("[controller]")]
   public class AuthController : ControllerBase
   {
     private readonly DataContextDapper _dapper;
@@ -17,6 +25,7 @@ namespace DotnetAPI.Controllers
       _config = config;
     }
 
+    [AllowAnonymous]
     [HttpPost("Register")]
     public IActionResult Register(UserRegDto userReg)
     {
@@ -68,13 +77,14 @@ namespace DotnetAPI.Controllers
       throw new Exception("Passwords do not match");
     }
 
+    [AllowAnonymous]
     [HttpPost("Login")]
     public IActionResult Login(UserLoginDto userLogin)
     {
-      string sql =
+      string sqlLoginConfirm =
         "SELECT PasswordHash,PasswordSalt FROM TutorialAppSchema.Auth" +
         " WHERE Email = '" + userLogin.Email + "'";
-      var userConfirm = _dapper.LoadDataSingle<UserLoginConfirmDto>(sql);
+      var userConfirm = _dapper.LoadDataSingle<UserLoginConfirmDto>(sqlLoginConfirm);
       var passwordHash = GetPasswordHash(userLogin.Password, userConfirm.PasswordSalt);
       for (var index = 0; index < passwordHash.Length; index++)
       {
@@ -83,13 +93,31 @@ namespace DotnetAPI.Controllers
           return StatusCode(401, "Incorrect password");
         }
       }
-      return Ok();
+
+      string userIdSql =
+        $"SELECT UserId FROM TutorialAppSchema.Users WHERE Email = '{userLogin.Email}'";
+      int userId = _dapper.LoadDataSingle<int>(userIdSql);
+
+      return Ok(new Dictionary<string, string> {
+        { "token", CreateToken(userId) }
+      });
+    }
+
+    [HttpGet("RefreshToken")]
+    public string RefreshToken()
+    {
+      string userIdSql =
+        "SELECT UserId FROM TutorialAppSchema.Users WHERE UserId = '" +
+        User.FindFirst("userId")?.Value + "'";
+      int userId = _dapper.LoadDataSingle<int>(userIdSql);
+
+      return CreateToken(userId);
     }
 
     private byte[] GetPasswordHash(string password, byte[] passwordSalt)
     {
       string passwordSaltPlusString =
-        _config.GetSection("Appsettings.PasswordKey").Value +
+        _config.GetSection("Appsettings:PasswordKey").Value +
           Convert.ToBase64String(passwordSalt);
 
       return KeyDerivation.Pbkdf2(
@@ -99,6 +127,32 @@ namespace DotnetAPI.Controllers
         iterationCount: 1000,
         numBytesRequested: 256 / 8
       );
+    }
+
+    private string CreateToken(int userId)
+    {
+      Claim[] claims = new Claim[] {
+        new Claim("userId", userId.ToString())
+      };
+
+      string tokenKeyStr = _config.GetSection("AppSettings:TokenKey").Value ??= "";
+      var tokenKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKeyStr));
+
+      var credentials = new SigningCredentials(
+        tokenKey, SecurityAlgorithms.HmacSha256Signature);
+
+      var descriptor = new SecurityTokenDescriptor()
+      {
+        Subject = new ClaimsIdentity(claims),
+        SigningCredentials = credentials,
+        Expires = DateTime.Now.AddDays(1)
+      };
+
+      var tokenHandler = new JwtSecurityTokenHandler();
+
+      var token = tokenHandler.CreateToken(descriptor);
+
+      return tokenHandler.WriteToken(token);
     }
   }
 }
