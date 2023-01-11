@@ -41,24 +41,36 @@ namespace DotnetAPI.Controllers
           var passwordHash = _authHelper.GetPasswordHash(userReg.Password, passwordSalt);
 
           string sqlAddAuth =
-            "INSERT INTO TutorialAppSchema.Auth (Email, PasswordHash, PasswordSalt)" +
-            " VALUES ('" + userReg.Email + "', @PasswordHash, @PasswordSalt)";
+            "EXEC TutorialAppSchema.spRegistration_Upsert" +
+            " @Email = @EmailParam" +
+            ", @PasswordHash = @PasswordHashParam" +
+            ", @PasswordSalt = @PasswordSaltParam";
 
           List<SqlParameter> sqlParameters = new List<SqlParameter>();
 
-          var passwordHashParam = new SqlParameter("@PasswordHash", SqlDbType.VarBinary);
+          var emailParam = new SqlParameter("@EmailParam", SqlDbType.VarChar);
+          emailParam.Value = userReg.Email;
+          var passwordHashParam = new SqlParameter("@PasswordHashParam", SqlDbType.VarBinary);
           passwordHashParam.Value = passwordHash;
-          var passwordSaltParam = new SqlParameter("@PasswordSalt", SqlDbType.VarBinary);
+          var passwordSaltParam = new SqlParameter("@PasswordSaltParam", SqlDbType.VarBinary);
           passwordSaltParam.Value = passwordSalt;
 
+          sqlParameters.Add(emailParam);
           sqlParameters.Add(passwordHashParam);
           sqlParameters.Add(passwordSaltParam);
 
           if (_dapper.ExecuteSqlWithParameters(sqlAddAuth, sqlParameters))
           {
             string sqlAddUser =
-              "INSERT INTO TutorialAppSchema.Users (FirstName, LastName, Email, Gender, Active)" +
-              $" VALUES ('{userReg.FirstName}', '{userReg.LastName}', '{userReg.Email}', '{userReg.Gender}', '1')";
+              "EXEC TutorialAppSchema.spUser_Upsert " +
+              $" @FirstName = '{userReg.FirstName}'" +
+              $", @LastName = '{userReg.LastName}'" +
+              $", @Email = '{userReg.Email}'" +
+              $", @Gender = '{userReg.Gender}" +
+              $", @Active = '1'" +
+              $", @JobTitle = '{userReg.JobTitle}'" +
+              $", @Department = '{userReg.Department}'" +
+              $", @Salary = {userReg.Salary}";
             if (_dapper.ExecuteSql(sqlAddUser))
             {
               return Ok();
