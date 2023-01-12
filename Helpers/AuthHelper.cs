@@ -3,14 +3,19 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Cryptography;
+using Microsoft.Data.SqlClient;
+using System.Data;
 
 namespace DotnetAPI.Helpers
 {
   public class AuthHelper
   {
     private readonly IConfiguration _config;
+    private readonly DataContextDapper _dapper;
     public AuthHelper(IConfiguration config)
     {
+      _dapper = new DataContextDapper(config);
       _config = config;
     }
 
@@ -53,6 +58,37 @@ namespace DotnetAPI.Helpers
       var token = tokenHandler.CreateToken(descriptor);
 
       return tokenHandler.WriteToken(token);
+    }
+
+    public bool SetPassword(UserLoginDto userLogin)
+    {
+      byte[] passwordSalt = new byte[128 / 8];
+      using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+      {
+        rng.GetNonZeroBytes(passwordSalt);
+      }
+      var passwordHash = GetPasswordHash(userLogin.Password, passwordSalt);
+
+      string sqlAddAuth =
+        "EXEC TutorialAppSchema.spRegistration_Upsert" +
+        " @Email = @EmailParam" +
+        ", @PasswordHash = @PasswordHashParam" +
+        ", @PasswordSalt = @PasswordSaltParam";
+
+      List<SqlParameter> sqlParameters = new List<SqlParameter>();
+
+      var emailParam = new SqlParameter("@EmailParam", SqlDbType.VarChar);
+      emailParam.Value = userLogin.Email;
+      var passwordHashParam = new SqlParameter("@PasswordHashParam", SqlDbType.VarBinary);
+      passwordHashParam.Value = passwordHash;
+      var passwordSaltParam = new SqlParameter("@PasswordSaltParam", SqlDbType.VarBinary);
+      passwordSaltParam.Value = passwordSalt;
+
+      sqlParameters.Add(emailParam);
+      sqlParameters.Add(passwordHashParam);
+      sqlParameters.Add(passwordSaltParam);
+
+      return _dapper.ExecuteSqlWithParameters(sqlAddAuth, sqlParameters);
     }
   }
 }
