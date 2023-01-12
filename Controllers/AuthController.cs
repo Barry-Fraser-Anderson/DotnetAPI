@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using DotnetAPI.Helpers;
+using Dapper;
 
 namespace DotnetAPI.Controllers
 {
@@ -80,11 +81,14 @@ namespace DotnetAPI.Controllers
     [HttpPost("Login")]
     public IActionResult Login(UserLoginDto userLogin)
     {
-      string sqlLoginConfirm =
-        "SELECT PasswordHash, PasswordSalt FROM TutorialAppSchema.Auth" +
-        " WHERE Email = '" + userLogin.Email + "'";
+      string sqlForHashAndSalt =
+        "EXEC TutorialAppSchema.spLoginConfirmation_Get" +
+        " @Email = '" + userLogin.Email + "'";
 
-      var userConfirm = _dapper.LoadDataSingle<UserLoginConfirmDto>(sqlLoginConfirm);
+      var sqlParameters = new DynamicParameters();
+      sqlParameters.Add("@EmailParam", userLogin.Email, DbType.String);
+
+      var userConfirm = _dapper.LoadDataSingleWithParams<UserLoginConfirmDto>(sqlForHashAndSalt, sqlParameters);
       var passwordHash = _authHelper.GetPasswordHash(userLogin.Password, userConfirm.PasswordSalt);
       for (var index = 0; index < passwordHash.Length; index++)
       {

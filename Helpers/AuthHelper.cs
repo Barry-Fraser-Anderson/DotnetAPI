@@ -79,13 +79,14 @@ namespace DotnetAPI.Helpers
 
       var emailParam = new SqlParameter("@EmailParam", SqlDbType.VarChar);
       emailParam.Value = userLogin.Email;
+      sqlParameters.Add(emailParam);
+
       var passwordHashParam = new SqlParameter("@PasswordHashParam", SqlDbType.VarBinary);
       passwordHashParam.Value = passwordHash;
+      sqlParameters.Add(passwordHashParam);
+
       var passwordSaltParam = new SqlParameter("@PasswordSaltParam", SqlDbType.VarBinary);
       passwordSaltParam.Value = passwordSalt;
-
-      sqlParameters.Add(emailParam);
-      sqlParameters.Add(passwordHashParam);
       sqlParameters.Add(passwordSaltParam);
 
       return _dapper.ExecuteSqlWithParameters(sqlAddAuth, sqlParameters);
