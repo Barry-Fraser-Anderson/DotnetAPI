@@ -1,7 +1,8 @@
 using System.Collections;
-using DotnetAPI.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using DotnetAPI.Models;
+using DotnetAPI.Data;
 
 namespace DotnetAPI.Controllers
 {
@@ -55,16 +56,16 @@ namespace DotnetAPI.Controllers
     }
 
     [HttpPost("UpsertPost")]
-    public IActionResult UpsertPost(PostEditDto postEdit)
+    public IActionResult UpsertPost(Post post)
     {
       string sql =
         "EXEC TutorialAppSchema.spPosts_Upsert" +
         "  @UserId = " + this.User.FindFirst("userId")?.Value +
-        ", @PostTitle = '" + postEdit.PostTitle + "'" +
-        ", @PostContent = '" + postEdit.PostContent + "'";
-      if (postEdit.PostId != 0)
+        ", @PostTitle = '" + post.PostTitle + "'" +
+        ", @PostContent = '" + post.PostContent + "'";
+      if (post.PostId != 0)
       {
-        sql += ", @PostId = " + postEdit.PostId;
+        sql += ", @PostId = " + post.PostId;
       }
 
       if (_dapper.ExecuteSql(sql))

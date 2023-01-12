@@ -1,9 +1,9 @@
 using System.Data;
-using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
 using DotnetAPI.Helpers;
+using DotnetAPI.Models;
+using DotnetAPI.Data;
 using Dapper;
 
 namespace DotnetAPI.Controllers
@@ -88,7 +88,7 @@ namespace DotnetAPI.Controllers
       var sqlParameters = new DynamicParameters();
       sqlParameters.Add("@EmailParam", userLogin.Email, DbType.String);
 
-      var userConfirm = _dapper.LoadDataSingleWithParams<UserLoginConfirmDto>(sqlForHashAndSalt, sqlParameters);
+      var userConfirm = _dapper.LoadDataSingleWithParameters<UserLoginConfirmDto>(sqlForHashAndSalt, sqlParameters);
       var passwordHash = _authHelper.GetPasswordHash(userLogin.Password, userConfirm.PasswordSalt);
       for (var index = 0; index < passwordHash.Length; index++)
       {

@@ -2,7 +2,7 @@ using System.Data;
 using Microsoft.Data.SqlClient;
 using Dapper;
 
-namespace DotnetAPI
+namespace DotnetAPI.Data
 {
   class DataContextDapper
   {
@@ -37,29 +37,19 @@ namespace DotnetAPI
       return dbConnection.Execute(sql);
     }
 
-    public bool ExecuteSqlWithParameters(string sql, List<SqlParameter> parameters)
+    public bool ExecuteSqlWithParameters(string sql, DynamicParameters parameters)
     {
-      var sqlCommand = new SqlCommand(sql);
-      foreach (var p in parameters)
-      {
-        sqlCommand.Parameters.Add(p);
-      }
-
-      var dbConnection = new SqlConnection(_config.GetConnectionString("DefaultConnection"));
-      dbConnection.Open();
-      sqlCommand.Connection = dbConnection;
-      int rowsAffected = sqlCommand.ExecuteNonQuery();
-      dbConnection.Close();
-
-      return rowsAffected > 0;
+      IDbConnection dbConnection = new SqlConnection(_config.GetConnectionString("DefaultConnection"));
+      return dbConnection.Execute(sql, parameters) > 0;
     }
-    public IEnumerable<T> LoadDataWithParams<T>(string sql, DynamicParameters parameters)
+
+    public IEnumerable<T> LoadDataWithParameters<T>(string sql, DynamicParameters parameters)
     {
       IDbConnection dbConnection = new SqlConnection(_config.GetConnectionString("DefaultConnection"));
       return dbConnection.Query<T>(sql, parameters);
     }
 
-    public T LoadDataSingleWithParams<T>(string sql, DynamicParameters parameters)
+    public T LoadDataSingleWithParameters<T>(string sql, DynamicParameters parameters)
     {
       IDbConnection dbConnection = new SqlConnection(_config.GetConnectionString("DefaultConnection"));
       return dbConnection.QuerySingle<T>(sql, parameters);

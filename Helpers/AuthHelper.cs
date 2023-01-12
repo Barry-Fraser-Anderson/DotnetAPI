@@ -1,11 +1,13 @@
 using System.Text;
+using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.IdentityModel.Tokens;
-using System.Security.Cryptography;
-using Microsoft.Data.SqlClient;
-using System.Data;
+using DotnetAPI.Models;
+using DotnetAPI.Data;
+using Dapper;
 
 namespace DotnetAPI.Helpers
 {
@@ -75,19 +77,10 @@ namespace DotnetAPI.Helpers
         ", @PasswordHash = @PasswordHashParam" +
         ", @PasswordSalt = @PasswordSaltParam";
 
-      List<SqlParameter> sqlParameters = new List<SqlParameter>();
-
-      var emailParam = new SqlParameter("@EmailParam", SqlDbType.VarChar);
-      emailParam.Value = userLogin.Email;
-      sqlParameters.Add(emailParam);
-
-      var passwordHashParam = new SqlParameter("@PasswordHashParam", SqlDbType.VarBinary);
-      passwordHashParam.Value = passwordHash;
-      sqlParameters.Add(passwordHashParam);
-
-      var passwordSaltParam = new SqlParameter("@PasswordSaltParam", SqlDbType.VarBinary);
-      passwordSaltParam.Value = passwordSalt;
-      sqlParameters.Add(passwordSaltParam);
+      var sqlParameters = new DynamicParameters();
+      sqlParameters.Add("@EmailParam", userLogin.Email, DbType.String);
+      sqlParameters.Add("@PasswordHashParam", passwordHash, DbType.Binary);
+      sqlParameters.Add("@PasswordSaltParam", passwordSalt, DbType.Binary);
 
       return _dapper.ExecuteSqlWithParameters(sqlAddAuth, sqlParameters);
     }
