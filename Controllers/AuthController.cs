@@ -83,10 +83,10 @@ namespace DotnetAPI.Controllers
     {
       string sqlForHashAndSalt =
         "EXEC TutorialAppSchema.spLoginConfirmation_Get" +
-        " @Email = '" + userLogin.Email + "'";
+        " @Email = @EmailParameter";
 
       var sqlParameters = new DynamicParameters();
-      sqlParameters.Add("@EmailParam", userLogin.Email, DbType.String);
+      sqlParameters.Add("@EmailParameter", userLogin.Email, DbType.String);
 
       var userConfirm = _dapper.LoadDataSingleWithParameters<UserLoginConfirmDto>(sqlForHashAndSalt, sqlParameters);
       var passwordHash = _authHelper.GetPasswordHash(userLogin.Password, userConfirm.PasswordSalt);
