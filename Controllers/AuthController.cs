@@ -1,10 +1,11 @@
 using System.Data;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using DotnetAPI.Helpers;
 using DotnetAPI.Models;
 using DotnetAPI.Data;
 using Dapper;
+using AutoMapper;
 
 namespace DotnetAPI.Controllers
 {
@@ -15,11 +16,18 @@ namespace DotnetAPI.Controllers
   {
     private readonly DataContextDapper _dapper;
     private readonly AuthHelper _authHelper;
+    private readonly ReusableSQL _reusableSql;
+    private readonly IMapper _mapper;
 
     public AuthController(IConfiguration config)
     {
       _dapper = new DataContextDapper(config);
       _authHelper = new AuthHelper(config);
+      _reusableSql = new ReusableSQL(config);
+      _mapper = new Mapper(new MapperConfiguration(cfg =>
+      {
+        cfg.CreateMap<UserRegDto, UserComplete>();
+      }));
     }
 
     [AllowAnonymous]
@@ -42,17 +50,10 @@ namespace DotnetAPI.Controllers
           };
           if (_authHelper.SetPassword(userForSetPassword))
           {
-            string sqlAddUser =
-              "EXEC TutorialAppSchema.spUser_Upsert " +
-              $" @FirstName = '{userReg.FirstName}'" +
-              $", @LastName = '{userReg.LastName}'" +
-              $", @Email = '{userReg.Email}'" +
-              $", @Gender = '{userReg.Gender}" +
-              $", @Active = '1'" +
-              $", @JobTitle = '{userReg.JobTitle}'" +
-              $", @Department = '{userReg.Department}'" +
-              $", @Salary = {userReg.Salary}";
-            if (_dapper.ExecuteSql(sqlAddUser))
+            UserComplete userComplete = _mapper.Map<UserComplete>(userReg);
+            userComplete.Active = true;
+
+            if (_reusableSql.UpsertUser(userComplete))
             {
               return Ok();
             }
